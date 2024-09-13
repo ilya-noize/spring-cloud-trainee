@@ -1,0 +1,30 @@
+version: '3.3'
+
+services:
+  user-application:
+    image: application/provider-user:0.0.1
+    build:
+      context: /users/
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_DATASOURCE_URL=jdbc:h2:mem:userApp
+
+  company-application:
+    image: application/provider-company:0.0.1
+    build:
+      context: /companies/
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - SERVER_PORT=8082
+      - SPRING_DATASOURCE_URL=jdbc:h2:mem:companyApp
+
+  discovery-eureka:
+    image: application/discovery-eureka:0.0.1
+    build:
+      context: /discovery/
+      dockerfile: Dockerfile
