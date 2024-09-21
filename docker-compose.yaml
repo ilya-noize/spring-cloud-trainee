@@ -1,30 +1,64 @@
 version: '3.3'
 
 services:
-  user-application:
-    image: application/provider-user:0.0.1
+  service-discovery:
+    image: application/discovery-micro:naive
     build:
-      context: /users/
-      dockerfile: Dockerfile
-    ports:
-      - "8081:8081"
+      context: discovery-micro/
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     environment:
-      - SERVER_PORT=8081
-      - SPRING_DATASOURCE_URL=jdbc:h2:mem:userApp
-
-  company-application:
-    image: application/provider-company:0.0.1
-    build:
-      context: /companies/
-      dockerfile: Dockerfile
+      SERVER_PORT: 8080
     ports:
-      - "8082:8082"
-    environment:
-      - SERVER_PORT=8082
-      - SPRING_DATASOURCE_URL=jdbc:h2:mem:companyApp
+      - "8761:8080"
 
-  discovery-eureka:
-    image: application/discovery-eureka:0.0.1
+  service-math:
+    image: application/company-micro:naive
     build:
-      context: /discovery/
-      dockerfile: Dockerfile
+      context: company-micro/
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      SERVER_PORT: 8080
+      DISCOVERY_URL: http://service-discovery:8080/eureka/
+    ports:
+      - "8081:8080"
+
+  service-history:
+    image: application/user-micro:naive
+    build:
+      context: user-micro/
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      SERVER_PORT: 8080
+      DISCOVERY_URL: http://service-discovery:8080/eureka/
+    ports:
+      - "8082:8080"
+
+  service-exam:
+    image: application/staff-micro:naive
+    build:
+      context: staff-micro/
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      service-discovery:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8080
+      DISCOVERY_URL: http://service-discovery:8080/eureka/
+    ports:
+      - "8800:8080"
